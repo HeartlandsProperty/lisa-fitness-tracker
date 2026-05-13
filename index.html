@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fitness">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Lisa's Fitness Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* Header */
+  #header { background: linear-gradient(135deg,#1e293b,#0f172a); padding: 52px 16px 0; border-bottom: 1px solid #1e3a5f; position: sticky; top: 0; z-index: 10; }
+  #header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(90deg,#38bdf8,#818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  #header p { font-size: 11px; color: #64748b; margin: 3px 0 12px; }
+  #day-row { display: flex; gap: 3px; overflow-x: auto; scrollbar-width: none; padding-bottom: 0; }
+  #day-row::-webkit-scrollbar { display: none; }
+  .day-btn { padding: 8px 11px; border: none; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 11px; white-space: nowrap; background: transparent; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  .day-btn.active { background: #1e40af; color: #fff; border-bottom-color: #38bdf8; }
+  .day-btn.start { color: #38bdf8; }
+
+  /* Tabs */
+  #tabs { display: flex; border-bottom: 2px solid #1e293b; background: #0f172a; position: sticky; top: 118px; z-index: 9; }
+  .tab-btn { flex: 1; padding: 10px 4px; border: none; background: none; font-weight: 700; font-size: 11px; color: #475569; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+  .tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+
+  /* Content */
+  #content { padding: 0 14px 32px; }
+  .card { background: #1e293b; border-radius: 14px; padding: 16px; margin-top: 14px; border: 1px solid #334155; }
+  .card.highlight { border-color: #1e40af; }
+  .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 4px; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
+  .info-box { margin-top: 10px; padding: 10px 14px; background: #0f172a; border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.7; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .grid-cell { background: #0f172a; border-radius: 10px; padding: 12px; }
+
+  /* Exercise pills */
+  .ex-row { background: #0f172a; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .pill-row { display: flex; gap: 4px; margin-top: 4px; }
+  .pill { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #334155; background: transparent; color: #94a3b8; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .pill.done { border-color: #10b981; background: #10b98122; color: #10b981; }
+
+  /* Macro bar */
+  .macro-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; margin: 6px 0; }
+  .macro-p { background: #8b5cf6; border-radius: 4px; }
+  .macro-c { background: #f59e0b; border-radius: 4px; }
+  .macro-f { background: #10b981; border-radius: 4px; }
+  .macro-labels { display: flex; gap: 12px; font-size: 11px; }
+
+  /* Ingredient rows */
+  .ing-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid #1e293b; }
+  .ing-row:last-child { border-bottom: none; }
+
+  /* Prep note */
+  .prep-note { margin: 6px 0; padding: 6px 10px; background: #0f172a; border-radius: 6px; font-size: 11px; color: #38bdf8; }
+
+  /* Shopping */
+  .shop-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #1e293b; cursor: pointer; transition: opacity 0.15s; }
+  .shop-item.checked { opacity: 0.35; }
+  .shop-check { width: 20px; height: 20px; border-radius: 5px; border: 2px solid #334155; background: transparent; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; transition: all 0.15s; }
+  .shop-check.checked { border-color: #10b981; background: #10b98133; color: #10b981; }
+
+  /* Progress */
+  .progress-bar-bg { height: 14px; border-radius: 7px; background: #0f172a; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg,#38bdf8,#818cf8); border-radius: 7px; transition: width 0.5s; }
+  .weight-input { background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; padding: 8px 12px; font-size: 16px; width: 120px; }
+
+  /* Buttons */
+  .btn-primary { background: #1d4ed8; border: none; border-radius: 8px; color: #fff; padding: 10px 16px; font-weight: 700; font-size: 13px; }
+  .btn-success { background: #10b981; border: none; border-radius: 8px; color: #fff; padding: 10px 16px; font-weight: 700; font-size: 13px; }
+  .btn-pill { padding: 7px 14px; border-radius: 20px; border: none; font-weight: 700; font-size: 12px; transition: all 0.15s; }
+
+  /* Update modal */
+  #update-modal { display: none; position: fixed; inset: 0; background: #0f172acc; z-index: 100; align-items: flex-end; }
+  #update-modal.open { display: flex; }
+  #update-sheet { background: #1e293b; border-radius: 20px 20px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); width: 100%; }
+  #update-sheet h2 { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  #update-sheet p { font-size: 13px; color: #94a3b8; margin-bottom: 14px; line-height: 1.6; }
+  #update-textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #e2e8f0; padding: 12px; font-size: 12px; font-family: monospace; height: 160px; resize: none; margin-bottom: 12px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns button { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; font-size: 14px; }
+  #cancel-btn { background: #334155; color: #94a3b8; }
+  #apply-btn { background: #1d4ed8; color: #fff; }
+
+  /* Yoga card */
+  .yoga-item { background: #0f172a; border-radius: 10px; padding: 10px 14px; display: flex; gap: 12px; margin-bottom: 8px; }
+
+  /* Stats */
+  .stat-card { background: #0f172a; border-radius: 10px; padding: 12px; }
+  .stat-card .big { font-size: 24px; font-weight: 800; color: #38bdf8; }
+
+  /* Week refresh prompt */
+  .refresh-prompt { background: #0f172a; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #e2e8f0; font-style: italic; border-left: 3px solid #38bdf8; margin: 10px 0; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Lisa's Fitness Tracker</h1>
+  <p>2 adults · 2 children · Goal: lose 1 stone 🎯</p>
+  <div id="day-row"></div>
+</div>
+
+<div id="tabs">
+  <button class="tab-btn active" data-tab="workout">🏋️ Workout</button>
+  <button class="tab-btn" data-tab="meal">🍽️ Meals</button>
+  <button class="tab-btn" data-tab="shop">🛒 Shopping</button>
+  <button class="tab-btn" data-tab="progress">📈 Progress</button>
+</div>
+
+<div id="content"></div>
+
+<!-- Update modal -->
+<div id="update-modal">
+  <div id="update-sheet">
+    <h2>📋 Paste new week's plan</h2>
+    <p>On Monday, ask Claude for your new plan and paste the JSON it gives you here. Your app updates instantly.</p>
+    <textarea id="update-textarea" placeholder='Paste JSON here, e.g. {"run": {...}, "weights": {...}, ...}'></textarea>
+    <div class="modal-btns">
+      <button id="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button id="apply-btn" onclick="applyUpdate()">Apply update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+const WORKOUTS = {
+  Monday:    { type:"run",     label:"🏃 Run",          distance:8,  notes:"Easy conversational pace — 8km" },
+  Tuesday:   { type:"weights", label:"🏋️ Weights",      focus:"Upper Body", notes:"Chest, back, shoulders, arms" },
+  Wednesday: { type:"run",     label:"🏃 Run",          distance:7,  notes:"Tempo or interval run — 7km" },
+  Thursday:  { type:"yoga",    label:"🧘 Yoga Class",   notes:"10am · 1 hour class at the studio" },
+  Friday:    { type:"weights", label:"🏋️ Weights",      focus:"Lower Body", notes:"Squats, lunges, glutes, hamstrings" },
+  Saturday:  { type:"home",    label:"🏠 Home Workout", notes:"≤20 min · kettlebell, bike or bands" },
+  Sunday:    { type:"rest",    label:"😴 Rest",         notes:"Full rest — gentle walk or stretching only" },
+};
+
+const LIFTING = {
+  "Upper Body": [
+    { exercise:"Push-ups", reps:"10–12", tip:"Keep core tight throughout" },
+    { exercise:"Dumbbell rows (3kg)", reps:"12 each side", tip:"Squeeze shoulder blade at top" },
+    { exercise:"Shoulder press (3kg)", reps:"10", tip:"Don't arch lower back" },
+    { exercise:"Bicep curls (3kg)", reps:"12", tip:"Slow & controlled on way down" },
+    { exercise:"Tricep dips (chair)", reps:"10", tip:"Elbows point back, not out" },
+    { exercise:"Plank", reps:"30–45 sec", tip:"Hips level with shoulders" },
+  ],
+  "Lower Body": [
+    { exercise:"Goblet squat (10kg KB)", reps:"12–15", tip:"Knees track over toes" },
+    { exercise:"KB Romanian deadlift", reps:"10–12", tip:"Hinge at hips, soft knees" },
+    { exercise:"Resistance band lunges", reps:"10 each leg", tip:"Back knee nearly touches floor" },
+    { exercise:"Glute bridge (KB on hips)", reps:"15", tip:"Squeeze glutes hard at top" },
+    { exercise:"Calf raises", reps:"20", tip:"Full range, hold 1 sec at top" },
+    { exercise:"Band side steps", reps:"15 each way", tip:"Keep tension in band throughout" },
+  ],
+};
+
+const HOME_WORKOUTS = [
+  { name:"Kettlebell Blast", duration:"20 min", equipment:"10kg kettlebell", apple:"HIIT — Kettlebell or Total Body Strength",
+    exercises:[{ex:"KB Swings",work:"40 sec",rest:"20 sec",rounds:4},{ex:"KB Goblet Squat",work:"40 sec",rest:"20 sec",rounds:4},{ex:"KB Romanian Deadlift",work:"40 sec",rest:"20 sec",rounds:3},{ex:"KB Halo",work:"30 sec each way",rest:"15 sec",rounds:3}] },
+  { name:"Bike Intervals", duration:"20 min", equipment:"Exercise bike", apple:"Cycling — 20-min Intervals",
+    exercises:[{ex:"Warm up — easy spin",work:"3 min",rest:"—",rounds:1},{ex:"Hard effort (RPE 8/10)",work:"45 sec",rest:"1 min 15 sec",rounds:8},{ex:"Cool down",work:"3 min",rest:"—",rounds:1}] },
+  { name:"Resistance Bands", duration:"18 min", equipment:"Resistance bands", apple:"Strength — Bands & Body Weight",
+    exercises:[{ex:"Band squats",work:"45 sec",rest:"15 sec",rounds:3},{ex:"Band pull-aparts",work:"45 sec",rest:"15 sec",rounds:3},{ex:"Band glute kickbacks",work:"45 sec each",rest:"15 sec",rounds:3},{ex:"Band bent-over rows",work:"45 sec",rest:"15 sec",rounds:3}] },
+];
+
+// Default meals — replaced when user pastes a new week
+const DEFAULT_MEALS = {
+  run: {
+    tag:"🍝 Carb Load", color:"#f59e0b",
+    breakfast:{ name:"Oat porridge with banana & honey", time:"15 min", protein:12, carbs:68, fat:6, cal:375, ingredients:[["Rolled oats","80g"],["Milk (semi-skimmed)","250ml"],["Banana","120g"],["Honey","15g"],["Chia seeds","10g"]] },
+    lunch:{ name:"Jacket potato with cheese & baked beans", time:"15 min (microwave)", protein:28, carbs:90, fat:10, cal:590, ingredients:[["Large jacket potatoes","4"],["Baked beans","2 × 400g tins"],["Cheddar (grated)","80g"],["Butter","15g"]] },
+    dinner:{ name:"Slow-roast tomato pasta bake", time:"15 min prep · 45 min oven", protein:40, carbs:82, fat:12, cal:600, prepNote:"Assemble in the morning, refrigerate, bake when kids are home.", ingredients:[["Pasta (penne)","300g"],["Lean beef mince","400g"],["Chopped tomatoes (tin)","2 × 400g"],["Garlic & onion","100g"],["Mozzarella (grated)","150g"],["Olive oil","15ml"],["Mixed Italian herbs","5g"]] },
+    snack:{ name:"Banana & peanut butter on oatcakes", protein:8, carbs:38, fat:9, cal:265 },
+  },
+  weights: {
+    tag:"💪 Protein Focus", color:"#8b5cf6",
+    breakfast:{ name:"Scrambled eggs on wholemeal toast", time:"10 min", protein:24, carbs:38, fat:15, cal:390, ingredients:[["Eggs","3 per adult / 2 per child"],["Wholemeal bread","2 slices adult / 1 child"],["Milk","30ml"],["Butter","10g"],["Salt & pepper","pinch"]] },
+    lunch:{ name:"Greek yogurt chicken wrap", time:"15 min", protein:42, carbs:45, fat:10, cal:440, ingredients:[["Chicken breast (cooked)","500g"],["Wholemeal wraps","4"],["Greek yogurt (0%)","150g"],["Cucumber","100g"],["Lettuce & tomato","to fill"]] },
+    dinner:{ name:"Lamb shoulder with roasted root veg", time:"20 min prep · 2 hrs oven", protein:50, carbs:44, fat:18, cal:545, prepNote:"Pop in the oven mid-morning on low (160°C) — fall-apart tender by dinner.", ingredients:[["Lamb shoulder (bone-in)","1.2kg"],["Parsnip","200g"],["Carrot","200g"],["Red onion","150g"],["Rosemary & garlic","to taste"],["Olive oil","20ml"],["Chicken stock","200ml"]] },
+    snack:{ name:"Cottage cheese with cucumber & oatcakes", protein:18, carbs:18, fat:5, cal:185 },
+  },
+  yoga: {
+    tag:"🧘 Light & Nourishing", color:"#06b6d4",
+    breakfast:{ name:"Smoothie bowl with seeds & fruit", time:"10 min", protein:14, carbs:52, fat:8, cal:340, ingredients:[["Frozen berries","200g"],["Banana","100g"],["Greek yogurt","200g"],["Low-sugar granola","40g"],["Flaxseeds","10g"],["Honey","10g"]] },
+    lunch:{ name:"Avocado & poached egg on sourdough", time:"15 min", protein:22, carbs:42, fat:18, cal:420, ingredients:[["Sourdough bread","4 slices"],["Avocado","2 medium"],["Eggs","4"],["Lemon juice","10ml"],["Chilli flakes","pinch"]] },
+    dinner:{ name:"Baked salmon en papillote with asparagus & new potatoes", time:"10 min prep · 25 min oven", protein:46, carbs:52, fat:16, cal:550, prepNote:"Wrap salmon parcels in foil in the afternoon — refrigerate and bake from cold (add 5 mins).", ingredients:[["Salmon fillets","4 × 150g"],["Asparagus","200g"],["New potatoes","500g"],["Lemon","2"],["Dill & garlic","10g"],["Olive oil","15ml"],["Butter","15g"]] },
+    snack:{ name:"Dates & almond butter", protein:4, carbs:28, fat:7, cal:195 },
+  },
+  home: {
+    tag:"⚡ Balanced Energy", color:"#f43f5e",
+    breakfast:{ name:"3-ingredient banana pancakes", time:"15 min", protein:16, carbs:55, fat:10, cal:380, ingredients:[["Ripe bananas","3"],["Eggs","4"],["Rolled oats","60g"],["Coconut oil","10ml"],["Maple syrup & berries","to serve"]] },
+    lunch:{ name:"Veggie & hummus pitta pockets", time:"10 min", protein:18, carbs:50, fat:10, cal:360, ingredients:[["Wholemeal pittas","4"],["Hummus","200g"],["Carrot","150g"],["Cucumber","150g"],["Red pepper","150g"],["Feta cheese","80g"]] },
+    dinner:{ name:"Beef & ale stew with crusty bread", time:"15 min prep · 1 hr 30 min oven", protein:48, carbs:55, fat:14, cal:550, prepNote:"Start mid-afternoon at 160°C. Ready for when the kids walk in.", ingredients:[["Braising beef (diced)","600g"],["Carrot & celery","250g"],["Onion","150g"],["Beef stock","500ml"],["Tomato purée","30g"],["Wholemeal bread","1 loaf"],["Olive oil","15ml"],["Thyme & bay","to taste"]] },
+    snack:{ name:"Apple & almond butter", protein:4, carbs:22, fat:8, cal:175 },
+  },
+  rest: {
+    tag:"🥗 Balanced", color:"#10b981",
+    breakfast:{ name:"Greek yogurt with berries & granola", time:"5 min", protein:18, carbs:42, fat:7, cal:310, ingredients:[["Greek yogurt (0%)","400g"],["Mixed berries","150g"],["Low-sugar granola","60g"],["Honey","10g"]] },
+    lunch:{ name:"Butternut squash & ginger soup with crusty bread", time:"10 min prep · 30 min simmer", protein:10, carbs:52, fat:6, cal:310, ingredients:[["Butternut squash","700g"],["Onion","100g"],["Fresh ginger","15g"],["Vegetable stock","1L"],["Coconut milk","100ml"],["Olive oil","15ml"],["Crusty bread","4 slices"]] },
+    dinner:{ name:"Roast chicken thighs with Mediterranean veg & couscous", time:"15 min prep · 45 min oven", protein:48, carbs:58, fat:14, cal:555, prepNote:"Marinate chicken in the morning. Roast when kids are home.", ingredients:[["Chicken thighs (skin-on)","8"],["Courgette","200g"],["Red pepper","200g"],["Red onion","150g"],["Cherry tomatoes","200g"],["Couscous (dry)","200g"],["Lemon, olive oil, paprika","20ml"]] },
+    snack:{ name:"Oatcakes with peanut butter", protein:6, carbs:24, fat:9, cal:200 },
+  },
+};
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+
+function getTomorrow() {
+  const jsDay = new Date().getDay();
+  const tomorrowJs = (jsDay + 1) % 7;
+  return tomorrowJs === 0 ? 6 : tomorrowJs - 1;
+}
+
+let state = {
+  activeDay: DAYS[getTomorrow()],
+  tab: "workout",
+  meals: loadMeals(),
+  progressLog: loadProgress(),
+  completedSets: {},
+  checkedItems: loadChecked(),
+  homeIdx: 0,
+};
+
+function loadMeals() {
+  try { const m = localStorage.getItem('lisa_meals'); return m ? JSON.parse(m) : DEFAULT_MEALS; } catch { return DEFAULT_MEALS; }
+}
+function loadProgress() {
+  try { const p = localStorage.getItem('lisa_progress'); return p ? JSON.parse(p) : []; } catch { return []; }
+}
+function loadChecked() {
+  try { const c = localStorage.getItem('lisa_checked'); return c ? JSON.parse(c) : {}; } catch { return {}; }
+}
+function saveMeals() { localStorage.setItem('lisa_meals', JSON.stringify(state.meals)); }
+function saveProgress() { localStorage.setItem('lisa_progress', JSON.stringify(state.progressLog)); }
+function saveChecked() { localStorage.setItem('lisa_checked', JSON.stringify(state.checkedItems)); }
+
+// ─── HELPERS ────────────────────────────────────────────────────────────────
+
+function getMealKey(workoutType) {
+  return workoutType === "run" ? "run"
+    : workoutType === "weights" ? "weights"
+    : workoutType === "yoga" ? "yoga"
+    : workoutType === "home" ? "home"
+    : "rest";
+}
+
+function badge(color, text) {
+  return `<span class="badge" style="background:${color}22;color:${color}">${text}</span>`;
+}
+
+function macroBar(p, c, f) {
+  const total = p*4 + c*4 + f*9 || 1;
+  const pP = Math.round(p*4/total*100), pC = Math.round(c*4/total*100), pF = 100-pP-pC;
+  return `<div class="macro-bar"><div class="macro-p" style="width:${pP}%"></div><div class="macro-c" style="width:${pC}%"></div><div class="macro-f" style="width:${pF}%"></div></div>
+  <div class="macro-labels"><span style="color:#8b5cf6">P: ${p}g</span><span style="color:#f59e0b">C: ${c}g</span><span style="color:#10b981">F: ${f}g</span></div>`;
+}
+
+function buildShoppingList() {
+  const cats = {
+    "🥩 Meat & Fish":["chicken","salmon","lamb","beef","turkey","cod","prawn","mince","mackerel"],
+    "🥛 Dairy & Eggs":["egg","milk","butter","yogurt","feta","cottage","cheese","cream","mozzarella"],
+    "🥦 Fruit & Veg":["banana","berri","avocado","broccoli","spinach","carrot","celery","onion","courgette","pepper","tomato","cucumber","apple","lemon","asparagus","parsnip","squash","ginger","potato","date","mango"],
+    "🍞 Bread & Grains":["oat","bread","pasta","rice","quinoa","noodle","pitta","sourdough","granola","oatcake","wrap","couscous","penne","loaf"],
+    "🥫 Tins & Jars":["baked bean","chopped tomato","stock","coconut milk","curry paste","hummus","purée","ale"],
+    "🧴 Oils & Condiments":["olive oil","sesame oil","soy sauce","mayo","honey","maple syrup","peanut butter","almond butter"],
+    "🌿 Herbs & Spices":["garlic","ginger","paprika","chilli","salt","pepper","herb","cinnamon","cumin","basil","dill","rosemary","thyme","bay","italian"],
+    "🥜 Nuts & Seeds":["chia","flaxseed","almond","seed","nut"],
+  };
+
+  const seen = new Set();
+  const all = [];
+  DAYS.forEach(day => {
+    const nextIdx = (DAYS.indexOf(day)+1) % 7;
+    const key = getMealKey(WORKOUTS[DAYS[nextIdx]].type);
+    const meal = state.meals[key];
+    ["breakfast","lunch","dinner"].forEach(t => {
+      (meal[t]?.ingredients||[]).forEach(([item, qty]) => {
+        const k = item.toLowerCase().replace(/[^a-z]/g,"").slice(0,10);
+        if (!seen.has(k)) { seen.add(k); all.push({item,qty}); }
+      });
+    });
+  });
+
+  const grouped = {};
+  [...Object.keys(cats),"🛒 Other"].forEach(c => grouped[c]=[]);
+  all.forEach(({item,qty}) => {
+    let matched = false;
+    for (const [cat,kws] of Object.entries(cats)) {
+      if (kws.some(kw => item.toLowerCase().includes(kw))) { grouped[cat].push({item,qty}); matched=true; break; }
+    }
+    if (!matched) grouped["🛒 Other"].push({item,qty});
+  });
+  return grouped;
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+
+function render() {
+  renderDayRow();
+  renderTabs();
+  renderContent();
+}
+
+function renderDayRow() {
+  const tomorrow = DAYS[getTomorrow()];
+  document.getElementById('day-row').innerHTML = DAYS.map(d => {
+    const w = WORKOUTS[d];
+    const icon = w.type==="run"?"🏃":w.type==="weights"?"🏋️":w.type==="yoga"?"🧘":w.type==="home"?"🏠":"😴";
+    const cls = `day-btn${d===state.activeDay?" active":""}${d===tomorrow&&d!==state.activeDay?" start":""}`;
+    return `<button class="${cls}" onclick="setDay('${d}')">${d.slice(0,3)} ${icon}${d===tomorrow?" ←":""}</button>`;
+  }).join('');
+}
+
+function renderTabs() {
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === state.tab);
+  });
+}
+
+function renderContent() {
+  const el = document.getElementById('content');
+  if (state.tab === "workout") el.innerHTML = renderWorkout();
+  else if (state.tab === "meal") el.innerHTML = renderMeals();
+  else if (state.tab === "shop") el.innerHTML = renderShopping();
+  else el.innerHTML = renderProgress();
+  attachHandlers();
+}
+
+function renderWorkout() {
+  const day = state.activeDay;
+  const w = WORKOUTS[day];
+  const nextDay = DAYS[(DAYS.indexOf(day)+1)%7];
+  const nw = WORKOUTS[nextDay];
+  const tomorrow = DAYS[getTomorrow()];
+
+  let html = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="lbl">${day}${day===tomorrow?" — Start here":""}</div>
+        <div style="font-size:20px;font-weight:800">${w.label}</div>
+        <div style="color:#94a3b8;font-size:13px;margin-top:4px">${w.notes}</div>
+      </div>
+      <div style="text-align:right">
+        ${w.type==="run"?`<div style="font-size:22px;font-weight:800;color:#38bdf8">${w.distance}km</div><div style="font-size:11px;color:#64748b">target</div>`:""}
+        ${w.type==="weights"?badge("#818cf8",w.focus):""}
+        ${w.type==="yoga"?badge("#06b6d4","10am · 1hr"):""}
+        ${w.type==="home"?badge("#f43f5e","≤20 min"):""}
+      </div>
+    </div>
+    <div class="info-box">💡 <strong style="color:#38bdf8">Tomorrow:</strong> ${nw.label} — today's meals fuel it!</div>
+  </div>`;
+
+  if (w.type === "run") {
+    html += `<div class="card">
+      <div class="lbl">Run Plan</div>
+      <div class="grid2">
+        ${[["Warm up","5 min easy jog"],["Main run",`${w.distance-1}km comfortable`],["Cool down","5 min walk + stretch"],["Weekly total","15km across 2 runs"]].map(([l,d])=>`<div class="grid-cell"><div class="lbl">${l}</div><div style="font-size:13px;font-weight:600">${d}</div></div>`).join('')}
+      </div>
+      <div class="info-box">Run at a pace where you can hold a conversation. 15km/week combined with a modest calorie deficit burns ~800–1,000 kcal for steady fat loss.</div>
+    </div>`;
+  }
+
+  if (w.type === "weights" && LIFTING[w.focus]) {
+    html += `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="lbl">${w.focus} — Your Equipment</div>
+        ${badge("#818cf8","Tap sets to track")}
+      </div>
+      <div style="margin-top:10px">
+        ${LIFTING[w.focus].map((ex,i)=>`
+        <div class="ex-row">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">${ex.exercise}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px">💡 ${ex.tip}</div>
+          </div>
+          <div style="text-align:right;margin-left:10px">
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:4px">${ex.reps}</div>
+            <div class="pill-row">
+              ${[1,2,3].map(s=>{const k=`${day}-${i}-${s}`;const done=!!state.completedSets[k];return`<button class="pill${done?" done":""}" onclick="toggleSet('${k}')">${done?"✓":s}</button>`}).join('')}
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="info-box">Focus on form and controlled reps — quality beats heavy weight when starting out. 2 sessions/week builds lean muscle that raises your resting metabolism.</div>
+    </div>`;
+  }
+
+  if (w.type === "yoga") {
+    html += `<div class="card">
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="font-size:44px">🧘</div>
+        <div><div style="font-size:18px;font-weight:800">Yoga class today!</div>
+        <div style="font-size:14px;color:#94a3b8;margin-top:6px">10:00am · 1 hour at the studio</div></div>
+      </div>
+      <div style="margin-top:14px">
+        ${[["🕙","Arrive 5 min early","Set up your mat, let the teacher know if anything needs attention"],
+           ["🧴","Bring your mat & block","Your own kit — great for hygiene and you know how it handles"],
+           ["💧","Hydrate before & after","Aim for 500ml before class, and keep sipping throughout the day"],
+           ["🍽️","Don't eat a big meal beforehand","Light snack 1–2 hrs before is ideal — today's meals are adjusted for this"]].map(([icon,title,detail])=>`
+        <div class="yoga-item">
+          <span style="font-size:20px;flex-shrink:0">${icon}</span>
+          <div><div style="font-weight:700;font-size:13px">${title}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">${detail}</div></div>
+        </div>`).join('')}
+      </div>
+      <div class="info-box">Yoga lowers cortisol — the stress hormone linked to belly fat storage. It's doing more work than it looks!</div>
+    </div>`;
+  }
+
+  if (w.type === "home") {
+    const hw = HOME_WORKOUTS[state.homeIdx];
+    html += `<div class="card">
+      <div class="lbl">Choose Saturday's workout</div>
+      <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap">
+        ${HOME_WORKOUTS.map((h,i)=>`<button class="btn-pill" style="background:${i===state.homeIdx?"#1d4ed8":"#0f172a"};color:${i===state.homeIdx?"#fff":"#94a3b8"}" onclick="setHomeIdx(${i})">${h.name}</button>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div><div style="font-weight:800;font-size:16px">${hw.name}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">🛠 ${hw.equipment} · ⏱ ${hw.duration}</div></div>
+        ${badge("#f43f5e","≤20 min")}
+      </div>
+      <div style="padding:10px 12px;background:#1e40af22;border-radius:8px;margin-bottom:10px;font-size:12px;color:#93c5fd">
+        🍎 <strong>Apple Fitness+:</strong> ${hw.apple}
+      </div>
+      ${hw.exercises.map(ex=>`
+      <div style="background:#0f172a;border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+        <div><div style="font-weight:700;font-size:14px">${ex.ex}</div>
+        ${ex.rounds>1?`<div style="font-size:11px;color:#64748b;margin-top:2px">${ex.rounds} rounds</div>`:""}
+        </div>
+        <div style="text-align:right"><div style="font-size:13px;color:#38bdf8;font-weight:700">${ex.work}</div>
+        ${ex.rest!=="—"?`<div style="font-size:11px;color:#64748b">Rest: ${ex.rest}</div>`:""}
+        </div>
+      </div>`).join('')}
+      <div class="info-box">Short, sharp, done! Apple Fitness+ has guided sessions for all three types.</div>
+    </div>`;
+  }
+
+  if (w.type === "rest") {
+    html += `<div class="card">
+      <div class="lbl">Rest Day — Sunday</div>
+      ${["Gentle 10 min walk (optional)","Full body stretching — hips & legs especially","Stay hydrated — aim for 2L water","7–8 hours sleep tonight 💤","Prep Monday's kit & log the week's wins"].map(item=>`
+      <div style="display:flex;gap:10px;align-items:center;padding:9px 12px;background:#0f172a;border-radius:8px;margin-bottom:6px;font-size:13px">
+        <span style="color:#10b981">✓</span>${item}
+      </div>`).join('')}
+      <div class="info-box">Rest is where the magic happens — muscles repair, fat oxidation continues, and motivation resets. This day is part of the plan, not a gap in it.</div>
+    </div>`;
+  }
+
+  return html;
+}
+
+function renderMeals() {
+  const day = state.activeDay;
+  const nextDay = DAYS[(DAYS.indexOf(day)+1)%7];
+  const nw = WORKOUTS[nextDay];
+  const key = getMealKey(nw.type);
+  const m = state.meals[key];
+  const totalCal  = m.breakfast.cal + m.lunch.cal + m.dinner.cal + m.snack.cal;
+  const totalProt = m.breakfast.protein + m.lunch.protein + m.dinner.protein + m.snack.protein;
+
+  let html = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="lbl">Fuelling for ${nw.label} tomorrow</div>
+      <div style="font-size:16px;font-weight:800">${day}'s meal plan</div></div>
+      ${badge(m.color, m.tag)}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <div style="flex:1;background:#0f172a;border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#38bdf8">${totalCal}<span style="font-size:12px">kcal</span></div>
+        <div style="font-size:10px;color:#64748b;margin-top:3px">Calories</div>
+      </div>
+      <div style="flex:1;background:#0f172a;border-radius:10px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#8b5cf6">${totalProt}g</div>
+        <div style="font-size:10px;color:#64748b;margin-top:3px">Protein</div>
+      </div>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:#475569;padding:7px 10px;background:#0f172a;border-radius:8px">
+      👨‍👩‍👧‍👦 Serves 2 adults + 2 children. Children's portions ≈ 60% of adult.
+    </div>
+  </div>`;
+
+  [["🌅 Breakfast",m.breakfast,"#f59e0b"],["☀️ Lunch",m.lunch,"#38bdf8"],["🌙 Dinner",m.dinner,"#818cf8"]].forEach(([lbl,data,c]) => {
+    html += `<div class="card">
+      <div style="border-left:3px solid ${c};padding-left:12px;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:800;color:${c};text-transform:uppercase;letter-spacing:1px">${lbl}</div>
+        <div style="font-weight:800;font-size:16px;margin:4px 0">${data.name}</div>
+        <div style="font-size:11px;color:#64748b">⏱ ${data.time} · ${data.cal} kcal</div>
+        ${data.prepNote?`<div class="prep-note">📋 ${data.prepNote}</div>`:""}
+        ${macroBar(data.protein,data.carbs,data.fat)}
+      </div>
+      <div class="lbl">Ingredients (serves 4)</div>
+      ${data.ingredients.map(([item,qty])=>`<div class="ing-row"><span>${item}</span><span style="color:#64748b;font-weight:600">${qty}</span></div>`).join('')}
+    </div>`;
+  });
+
+  html += `<div class="card">
+    <div class="lbl">🍎 Snack</div>
+    <div style="font-weight:700;font-size:14px;margin-top:4px">${m.snack.name}</div>
+    <div style="font-size:12px;color:#64748b;margin-top:4px">${m.snack.cal} kcal · P: ${m.snack.protein}g · C: ${m.snack.carbs}g · F: ${m.snack.fat}g</div>
+  </div>`;
+
+  return html;
+}
+
+function renderShopping() {
+  const grouped = buildShoppingList();
+
+  let html = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="lbl">Full week's groceries</div>
+      <div style="font-size:16px;font-weight:800">Weekly Shopping List</div>
+      <div style="font-size:12px;color:#64748b;margin-top:3px">All 7 days · serves 4 · tap to tick off</div></div>
+      <button id="copy-btn" class="btn-primary" onclick="copyList()" style="font-size:12px;padding:9px 12px;flex-shrink:0">📋 Copy list</button>
+    </div>
+    <div style="margin-top:12px;padding:10px 12px;background:#1e40af22;border-radius:8px;font-size:12px;color:#93c5fd;line-height:1.6">
+      📱 <strong>Add to iPhone:</strong> Tap "Copy list" → open <strong>Reminders</strong> → New list "Groceries" → paste.
+    </div>
+  </div>`;
+
+  Object.entries(grouped).forEach(([cat, items]) => {
+    if (!items.length) return;
+    const doneCount = items.filter((_,i) => state.checkedItems[`${cat}-${i}`]).length;
+    html += `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="lbl">${cat}</div>
+        <span style="font-size:11px;color:${doneCount===items.length?"#10b981":"#475569"}">${doneCount}/${items.length}</span>
+      </div>
+      ${items.map(({item,qty},i)=>{
+        const k=`${cat}-${i}`;const checked=!!state.checkedItems[k];
+        return `<div class="shop-item${checked?" checked":""}" onclick="toggleCheck('${k}')">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="shop-check${checked?" checked":""}">${checked?"✓":""}</div>
+            <span style="font-size:13px;text-decoration:${checked?"line-through":"none"}">${item}</span>
+          </div>
+          <span style="font-size:12px;color:#64748b">${qty}</span>
+        </div>`;}).join('')}
+    </div>`;
+  });
+
+  return html;
+}
+
+function renderProgress() {
+  const log = state.progressLog;
+  const startKg = log[0]?.weight || 0;
+  const currentKg = log[log.length-1]?.weight || startKg;
+  const lostKg = startKg - currentKg;
+  const STONE = 6.35;
+  const pct = Math.min(100, Math.max(0, lostKg/STONE*100));
+
+  let html = `<div class="card">
+    <div class="lbl">Goal: Lose 1 stone (${STONE}kg)</div>
+    <div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:6px">
+        <span>Progress to goal</span>
+        <span style="color:#38bdf8;font-weight:700">${Math.max(0,lostKg).toFixed(1)}kg lost</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-top:4px">
+        <span>0kg</span><span>${pct.toFixed(0)}%</span><span>${STONE}kg</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Log today's weight</div>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <input class="weight-input" type="number" id="weight-input" placeholder="e.g. 72.5" step="0.1">
+      <span style="color:#64748b;font-size:13px">kg</span>
+      <button class="btn-primary" onclick="logWeight()">Log</button>
+    </div>
+  </div>`;
+
+  if (log.length > 0) {
+    html += `<div class="card"><div class="lbl">Weight log</div>
+      ${[...log].reverse().map((entry,i,arr)=>{
+        const prev=arr[i+1];const diff=prev?entry.weight-prev.weight:null;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e293b;font-size:13px">
+          <span style="color:#64748b">${entry.date}</span>
+          <span style="font-weight:700">${entry.weight} kg</span>
+          ${diff!==null?`<span style="color:${diff<0?"#10b981":"#f87171"};font-size:12px">${diff>0?"+":""}${diff.toFixed(1)} kg</span>`:"<span></span>"}
+        </div>`;}).join('')}
+    </div>`;
+  }
+
+  html += `<div class="card">
+    <div class="lbl">Weekly activity</div>
+    <div class="grid2">
+      ${[["Runs","2","15km total"],["Lifting","2","Tue & Fri"],["Yoga class","1","Thu 10am"],["Home workout","1","Sat ≤20 min"]].map(([l,v,s])=>`
+      <div class="stat-card"><div class="big">${v}</div><div class="lbl">${l}</div><div style="font-size:10px;color:#475569;margin-top:2px">${s}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lbl">Tips for your 1-stone goal</div>
+    ${["Aim for 0.5–1kg/week — sustainable & muscle-preserving","Hit 100–120g protein daily to protect muscle while losing fat","Drink 2–2.5L water daily — especially on run days","Yoga lowers cortisol — the stress hormone that causes belly fat","Sleep 7–8 hours — poor sleep raises hunger hormones by ~30%","Weigh weekly, same day & time, for accurate tracking"].map(t=>`
+    <div style="display:flex;gap:8px;font-size:12px;color:#94a3b8;align-items:flex-start;margin-bottom:8px">
+      <span style="color:#10b981;margin-top:1px;flex-shrink:0">→</span><span>${t}</span>
+    </div>`).join('')}
+  </div>
+
+  <div class="card highlight">
+    <div class="lbl">🔄 Update meals each Monday</div>
+    <div style="font-size:13px;color:#94a3b8;line-height:1.7;margin-bottom:12px">
+      Ask Claude for your new weekly plan, then tap the button below to paste it in. Your app updates instantly and works offline.
+    </div>
+    <div style="background:#0f172a;border-radius:8px;padding:10px 14px;font-size:12px;color:#e2e8f0;font-style:italic;border-left:3px solid #38bdf8;margin-bottom:14px;line-height:1.6">
+      "Generate my weekly meal plan as JSON for my fitness app — 2 adults, 2 kids, runs Mon & Wed, weights Tue & Fri, yoga Thu, home workout Sat, rest Sun. No tuna, no chickpeas, no lentil soup. Varied dinners, quick prep OK with longer oven time."
+    </div>
+    <button class="btn-primary" onclick="openModal()" style="width:100%;padding:13px;font-size:14px;border-radius:10px">📋 Paste new week's plan</button>
+  </div>`;
+
+  return html;
+}
+
+// ─── HANDLERS ───────────────────────────────────────────────────────────────
+
+function attachHandlers() {
+  // weight input enter key
+  const wi = document.getElementById('weight-input');
+  if (wi) wi.addEventListener('keydown', e => { if (e.key==='Enter') logWeight(); });
+}
+
+function setDay(d) { state.activeDay = d; render(); }
+function setHomeIdx(i) { state.homeIdx = i; renderContent(); }
+
+function toggleSet(k) {
+  state.completedSets[k] = !state.completedSets[k];
+  renderContent();
+}
+
+function toggleCheck(k) {
+  state.checkedItems[k] = !state.checkedItems[k];
+  saveChecked();
+  renderContent();
+}
+
+function logWeight() {
+  const input = document.getElementById('weight-input');
+  const val = parseFloat(input?.value);
+  if (!val) return;
+  state.progressLog.push({ date: new Date().toLocaleDateString('en-GB'), weight: val });
+  saveProgress();
+  renderContent();
+}
+
+function copyList() {
+  const grouped = buildShoppingList();
+  const lines = ["🛍️ WEEKLY SHOPPING LIST\n"];
+  Object.entries(grouped).forEach(([cat,items]) => {
+    if (!items.length) return;
+    lines.push(`\n${cat}`);
+    items.forEach(({item,qty}) => lines.push(`  • ${item} — ${qty}`));
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = document.getElementById('copy-btn');
+    if (btn) { btn.textContent = '✓ Copied!'; btn.classList.replace('btn-primary','btn-success'); setTimeout(()=>{ btn.textContent='📋 Copy list'; btn.classList.replace('btn-success','btn-primary'); }, 2500); }
+  });
+}
+
+function openModal() { document.getElementById('update-modal').classList.add('open'); }
+function closeModal() { document.getElementById('update-modal').classList.remove('open'); }
+
+function applyUpdate() {
+  const text = document.getElementById('update-textarea').value.trim();
+  try {
+    const parsed = JSON.parse(text);
+    // Validate it has the right keys
+    const required = ['run','weights','yoga','home','rest'];
+    if (!required.every(k => parsed[k])) throw new Error('Missing meal keys');
+    state.meals = parsed;
+    saveMeals();
+    closeModal();
+    // Reset shopping check ticks for new week
+    state.checkedItems = {};
+    saveChecked();
+    alert('✅ New week\'s plan applied! Shopping list has been reset.');
+    renderContent();
+  } catch(e) {
+    alert('⚠️ That doesn\'t look right — make sure you paste the full JSON Claude gives you.');
+  }
+}
+
+// Tab clicks
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => { state.tab = b.dataset.tab; render(); });
+});
+
+// Close modal on backdrop click
+document.getElementById('update-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ─── SERVICE WORKER ──────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
