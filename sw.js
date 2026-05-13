@@ -1,10 +1,10 @@
-const CACHE = 'lisa-fitness-v2';
+const CACHE = 'lisa-fitness-v3';
 const ASSETS = [
-  '/Lisa-fitness-tracker/',
-  '/Lisa-fitness-tracker/index.html',
-  '/Lisa-fitness-tracker/manifest.json',
-  '/Lisa-fitness-tracker/icon-192.png',
-  '/Lisa-fitness-tracker/icon-512.png'
+  '/lisa-fitness-tracker/',
+  '/lisa-fitness-tracker/index.html',
+  '/lisa-fitness-tracker/manifest.json',
+  '/lisa-fitness-tracker/icon-192.png',
+  '/lisa-fitness-tracker/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
