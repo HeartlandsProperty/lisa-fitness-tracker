@@ -1,5 +1,11 @@
-const CACHE = 'lisa-fitness-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE = 'lisa-fitness-v2';
+const ASSETS = [
+  '/Lisa-fitness-tracker/',
+  '/Lisa-fitness-tracker/index.html',
+  '/Lisa-fitness-tracker/manifest.json',
+  '/Lisa-fitness-tracker/icon-192.png',
+  '/Lisa-fitness-tracker/icon-512.png'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
