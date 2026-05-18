@@ -1,4 +1,4 @@
-const CACHE = 'lisa-fitness-v3';
+const CACHE = 'lisa-fitness-v5';
 const ASSETS = [
   '/lisa-fitness-tracker/',
   '/lisa-fitness-tracker/index.html',
