@@ -625,24 +625,26 @@ function openModal() { document.getElementById('update-modal').classList.add('op
 function closeModal() { document.getElementById('update-modal').classList.remove('open'); }
 
 function applyUpdate() {
-  const text = document.getElementById('update-textarea').value.trim();
+  // Strip markdown fences if present
+  const raw = document.getElementById('update-textarea').value;
+  const text = raw.replace(/```json/gi,'').replace(/```/g,'').trim();
   try {
     const parsed = JSON.parse(text);
-    const required = ['meals','upperBody','lowerBody','runs','homeWorkouts','weekLabel'];
-    if (!required.every(k => parsed[k])) throw new Error('Missing keys');
-    state.plan = parsed;
+    state.plan = Object.assign({}, DEFAULT_PLAN, parsed);
+    if (parsed.meals) state.plan.meals = Object.assign({}, DEFAULT_PLAN.meals, parsed.meals);
     savePlan();
     state.completedSets = {};
     state.checkedItems = {};
     saveChecked();
     closeModal();
     document.getElementById('update-textarea').value = '';
-    alert('✅ Week updated! Workouts, meals and shopping list are all fresh.');
+    alert('Week updated! All fresh.');
     render();
   } catch(e) {
-    alert('⚠️ Something looks wrong with that JSON — make sure you paste the full block Claude gives you.');
+    alert('Error: ' + e.message);
   }
 }
+
 
 document.querySelectorAll('.tab-btn').forEach(b=>{
   b.addEventListener('click',()=>{ state.tab=b.dataset.tab; render(); });
